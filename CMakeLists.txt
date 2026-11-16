@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(ToboImager VERSION 0.1.0)
+project(ToboImager VERSION 0.1.1)
 
 # the C runtime is linked in, so the plugin loads on a PC without the Visual C++ redistributable
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

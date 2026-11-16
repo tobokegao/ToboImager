@@ -268,7 +268,8 @@ void ToboImagerEditor::aarc (double pcx, double pcy, double rad, double a0, doub
                 if (c > 0)
                 {
                     double ca = std::atan2 (dx, -dy) * 180 / kPi;
-                    ca = juce::jlimit (0.0, 1.0, juce::jmin (ca - a0, a1 - ca) * kPi / 180 * rad + 0.5);
+                    // an end at -180 or 180 is no end: the arc goes on there on the other side, so it does not fade
+                    ca = juce::jlimit (0.0, 1.0, juce::jmin (a0 <= -180 ? 1e9 : ca - a0, a1 >= 180 ? 1e9 : a1 - ca) * kPi / 180 * rad + 0.5);
                     if (c * ca > 0.02) { g->a = c * ca; g->rect (xx, yy, 1, 1); }
                 }
             }
@@ -978,7 +979,9 @@ void ToboImagerEditor::frame()
         else if (k == NB - 1) { rrect (gx1 - 12, BY0 + LN, 12, 10, CR - LN); frect (gx0, BY0 + LN, gx1 - gx0 - 4, 16 - LN); frect (gx1 - 8, BY0 + 6, 8, 10); }
         else frect (gx0, BY0 + LN, gx1 - gx0, 16 - LN);
         setc (! gon ? PALE : bc (k) == BLUE ? WHITE : INK);
-        aarc (ux (gx0 + 8), uy (BY0 + 9), 3.5 * ZM, -145, -35); aarc (ux (gx0 + 8), uy (BY0 + 9), 3.5 * ZM, -180, -145); aarc (ux (gx0 + 8), uy (BY0 + 9), 3.5 * ZM, 35, 180);
+        // the ring stands around the middle of the stem: a stem of an even number of pixels has its middle between two pixels
+        { const double hp = lnp % 2 == 0 ? 0.5 : 0.0, rcx = ux (gx0 + 8) - hp, rcy = uy (BY0 + 9) - hp;
+          aarc (rcx, rcy, 3.5 * ZM, -180, -35); aarc (rcx, rcy, 3.5 * ZM, 35, 180); }
         g->rect (ux (gx0 + 8) - lnp / 2, uy (BY0 + 3.5), lnp, uy (BY0 + 8.5) - uy (BY0 + 3.5));   // stem: a whole number of pixels at every size
         g->font (f1); setc (gon && bc (k) == BLUE ? WHITE : INK);
         tcen (gx + 2 * CJOG + 5, BY0 + 8.5, bnameN[NB - 1][k]);
