@@ -1,0 +1,6 @@
+JUCE/
+build/
+*.log
+build_manual.html
+release/
+__pycache__/
