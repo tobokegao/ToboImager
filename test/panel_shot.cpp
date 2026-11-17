@@ -131,10 +131,10 @@ int main (int argc, char** argv)
     std::cout << "SCATTER knob (type FVN) dragged 30 px up: " << v0 << " -> " << getp (p, pScatter) << "\n"; bad += ! (getp (p, pScatter) > v0);
     v0 = getp (p, pGuard); juce::Thread::sleep (450); at (422, 328, true); at (422, 308, true); at (422, 308, false);
     std::cout << "GUARD knob dragged 30 px up: " << v0 << " -> " << getp (p, pGuard) << "\n"; bad += ! (getp (p, pGuard) > v0);
-    // meter kinds (three parts from x 312 to 452, y 16..30)
+    // meter kinds (three parts of 44 from x 316, y 16..30)
     for (int k : { 1, 2, 0, 2, 2 })
     {
-        click (312 + 140.0 / 3 * (k + 0.5), 23); const int got = p.getOpt ("scopeMode", 0);
+        click (316 + 44 * (k + 0.5), 23); const int got = p.getOpt ("scopeMode", 0);
         std::cout << "METER part " << k << " click: kind = " << got << (got == k ? "" : "   WRONG") << "\n"; bad += got != k;
     }
     // monitor (four parts of 48 from x 76, y 344..358); a second click on MID or SIDE goes back to STEREO

@@ -31,7 +31,7 @@ Tobo Imagerは、Windows用の無料のVST3エフェクトです。音を最大4
 
 ## インストール
 
-1. [最新のリリース](https://github.com/tobokegao/ToboImager/releases/latest)から`ToboImager_0.1.2_win64.zip`をダウンロードして展開します。
+1. [最新のリリース](https://github.com/tobokegao/ToboImager/releases/latest)から`ToboImager_0.1.3_win64.zip`をダウンロードして展開します。
 2. `Tobo Imager.vst3`フォルダーを、中のファイルだけでなくフォルダーごと`C:\Program Files\Common Files\VST3\`にコピーします。
 3. DAWを起動して、プラグインを再スキャンします。REAPERでは`Options` > `Preferences` > `Plug-ins` > `VST` > `Re-scan`です。
 4. プラグインは**Tobo Imager**（Tobokegao）という名前で表示されます。
@@ -198,6 +198,10 @@ Tobo Imagerは、GNU Affero General Public Licenseバージョン3またはそ�
 JUCEフレームワーク（AGPLv3）とVST 3 SDK（MIT License）を使っています。VSTはSteinberg Media Technologies GmbHの登録商標です。ステレオ化の方式のもとになった論文と、バイナリに含まれるライブラリのライセンスは、`CREDITS.md`と`THIRD_PARTY_LICENSES.txt`にあります。
 
 ## 更新履歴
+
+### 0.1.3（2026-11-17）
+
+- メーターのボタンを、0.1.2より前の幅に戻しました。幅を広げたことで、左右と上の余白が不ぞろいになっていました。
 
 ### 0.1.2（2026-11-17）
 

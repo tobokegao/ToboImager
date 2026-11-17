@@ -4,6 +4,10 @@
 
 ## Version history
 
+### 0.1.3 (2026-11-17)
+
+- Set the meter buttons back to the width they had before 0.1.2. With the wider buttons, the space to their left and right no longer matched the space above them.
+
 ### 0.1.2 (2026-11-17)
 
 - Added a small icon to the left of the name on the meter buttons (GONIO, POLAR, LEVEL) and on the MONITOR buttons (STEREO, MID, SIDE, DELTA), so you can tell them apart without reading the names.

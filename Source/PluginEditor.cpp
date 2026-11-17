@@ -1141,7 +1141,7 @@ void ToboImagerEditor::frame()
     {
         static const char* const kinds[3] = { "GONIO", "POLAR", "LEVEL" };
         const int mode = juce::jlimit (0, 2, proc.getOpt ("scopeMode", 0));
-        const int c = segs (312, 16, 140, 14, 3, 1, kinds, mode, 0, nullptr, nullptr, 1);
+        const int c = segs (316, 16, 132, 14, 3, 1, kinds, mode, 0, nullptr, nullptr, 1);
         if (c >= 0 && c != mode) { proc.setOpt ("scopeMode", c); lastzm = 0; }
     }
     double gpk = 0.0001, gcorr = 1;
