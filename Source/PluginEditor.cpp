@@ -16,7 +16,7 @@ constexpr int bcol[4] = { BLUE, AZURE, YEL, ORANGE };
 // spot. A handle that is dragged against its neighbour pushes it along (as the Ozone Imager does, which keeps a fixed
 // distance on the screen, 0.55 to 0.8 octaves). A host can still set the parameters closer together or out of order;
 // the engine takes them as they come.
-constexpr double STLINE = 0.35;      // how strong the line at the STEREOIZE amount of a band is drawn (ink over the band colour)
+constexpr double STLINE = 0.65;      // how strong the line at the STEREOIZE amount of a band is drawn (ink over the band colour)
 constexpr double XGAP = 1.4142135623730951;
 // what the bands are called and which colours they carry, for one, two, three and four bands
 constexpr int bcolN[4][4] = { { AZURE, AZURE, AZURE, AZURE }, { BLUE, ORANGE, ORANGE, ORANGE }, { BLUE, YEL, ORANGE, ORANGE }, { BLUE, AZURE, YEL, ORANGE } };
@@ -248,7 +248,7 @@ void ToboImagerEditor::sline (double xa, double ya, double xb, double yb, double
 // arc of the one line weight around the pixel (pcx, pcy), from a0 to a1 degrees (0 = up, clockwise; within -180..180)
 void ToboImagerEditor::aarc (double pcx, double pcy, double rad, double a0, double a1)
 {
-    const double hw = LN * ZM * 0.5;
+    const double hw = LN * ZM * 0.5, base = g->a;      // drawn as strong as the caller set it
     int yy = (int) std::floor (pcy - rad - hw - 1);
     const int rows = 2 * (int) std::ceil (rad + hw + 1) + 1;
     for (int r = 0; r < rows; ++r, ++yy)
@@ -270,12 +270,12 @@ void ToboImagerEditor::aarc (double pcx, double pcy, double rad, double a0, doub
                     double ca = std::atan2 (dx, -dy) * 180 / kPi;
                     // an end at -180 or 180 is no end: the arc goes on there on the other side, so it does not fade
                     ca = juce::jlimit (0.0, 1.0, juce::jmin (a0 <= -180 ? 1e9 : ca - a0, a1 >= 180 ? 1e9 : a1 - ca) * kPi / 180 * rad + 0.5);
-                    if (c * ca > 0.02) { g->a = c * ca; g->rect (xx, yy, 1, 1); }
+                    if (c * ca > 0.02) { g->a = base * c * ca; g->rect (xx, yy, 1, 1); }
                 }
             }
         }
     }
-    g->a = 1;
+    g->a = base;
 }
 
 // straight piece of the one line weight with round ends, between two points in pixels
@@ -404,7 +404,7 @@ std::pair<int, int> ToboImagerEditor::inkSpan (const juce::String& s)
             const double cov = (255 - dark) / 255.0;
             if (cov > 0.08) { if (first) { le = (x - 8) + (1 - cov); first = false; } re = (x - 8) + cov; }
         }
-        inkMid[s] = (le + re) / 2;
+        inkMid[s] = (le + re) / 2; inkWid[s] = re - le;
     }
     int top = 99, bot = -99;
     for (int y = 0; y < 64; ++y)
@@ -420,7 +420,7 @@ std::pair<int, int> ToboImagerEditor::inkSpan (const juce::String& s)
 void ToboImagerEditor::capRows()
 {
     Canvas c; c.resize (64, 64); c.set (0xffffff); c.rect (0, 0, 64, 64); c.font (f3); c.set (0x000000); c.text ("HEM", 4, 8); c.touch();
-    inkSpans.clear(); inkRows.clear(); inkMid.clear();
+    inkSpans.clear(); inkRows.clear(); inkMid.clear(); inkWid.clear();
     capTop = 99; capBot = -99;
     for (int y = 0; y < 64; ++y)
     {
@@ -522,7 +522,87 @@ bool ToboImagerEditor::button (double x, double y, double w, double h, const juc
 // Several buttons joined into one plate, for a choice of one among several: cols x rows cells, the names row by row.
 // The chosen cell is filled (ink with white text if its bit in invMask is set, else the "on" colour). Returns the cell
 // that was clicked, or -1.
-int ToboImagerEditor::segs (double x, double y, double w, double h, int cols, int rows, const char* const* names, int sel, int invMask, const double* colW, const double* textDx)
+// The sign that stands before the name on a button, for those who do not read the name.
+// set 1: the kinds of stereo meter (a diamond, half a disc, bars), set 2: the monitor (two rings, one ring, two arcs
+// apart, plus over minus in a ring). The sign is iconW() pixels wide and begins at the pixel `left`; it stands in the
+// middle of the rows y0 .. y1 - 1.
+int ToboImagerEditor::iconW (int set, int k, int capH) const
+{
+    const int lnp = (int) std::floor (LN * ZM + 0.5);
+    if (set == 1 && k == 2) return 3 * (int) std::floor (2 * ZM + 0.5) + 2 * juce::jmax (1, (int) std::floor (ZM + 0.5));      // three bars and two gaps
+    if (set == 2)
+    {
+        // the rings of the monitor: a whole number of pixels from the middle of a ring to the middle of its line
+        const int d = 2 * (int) std::floor (2.6 * ZM + 0.5) + lnp, sh = (int) std::floor (3 * ZM + 0.5);
+        // delta: the two halves of a ring, and between them a plus and a minus with room around them
+        // (pad: between a half ring and the stroke beside it, at least 2 pixels: with 1 the plus runs into the ring)
+        const int arm = ZM >= 1.5 ? 2 : 1, gp = (int) std::floor (0.9 * ZM + 0.5), pad = (int) std::floor (ZM + 1.0);
+        if (k == 3) return 2 * lnp + 2 * pad + 2 * (2 * arm + lnp) + gp;
+        return k == 1 ? d : d + sh;
+    }
+    // the field of the polar meter stands on the line the letters stand on and is a little higher than they are:
+    // its width follows from that height (the radius, the part under the middle, the line under it)
+    // (height = radius + the part under the middle + the line = the capitals + that part, so the radius is capH - lnp)
+    if (set == 1 && k == 1) return 2 * (capH - lnp) + lnp;
+    int w = (int) std::floor (8 * ZM + 0.5);
+    // as odd or even as the line is wide: then the middle of the sign is the middle of a line through it
+    if ((w - lnp) % 2 != 0) --w;
+    return w;
+}
+void ToboImagerEditor::icon (int set, int k, int left, int cpt, int capH, double cellMid)
+{
+    const int lnp = (int) std::floor (LN * ZM + 0.5), iw = iconW (set, k, capH), cpb = cpt + capH - 1, over = (int) std::floor (ZM + 0.5);
+    const double a = g->a, pcx = left + (iw - 1) / 2.0;
+    // The middle row is the middle of the capitals beside the sign, as odd or even as the line is wide. Where that
+    // cannot be, it is half a pixel off, to the side where the middle of the button is (or up, if that is the same).
+    double pcy = cpt + (capH - 1) / 2.0;
+    const bool whole = pcy == std::floor (pcy);
+    if (whole != (lnp % 2 != 0)) pcy += cellMid > pcy ? 0.5 : -0.5;
+    const double r = (iw - lnp) / 2.0;
+    if (set == 1 && k == 0) { sline (pcx, pcy - r, pcx + r, pcy); sline (pcx + r, pcy, pcx, pcy + r); sline (pcx, pcy + r, pcx - r, pcy); sline (pcx - r, pcy, pcx, pcy - r); }
+    if (set == 1 && k == 1)
+    {
+        // the field of the polar meter: a disc cut off flat, 1 unit under its middle. The line under it lies on the
+        // row the letters stand on.
+        const int cut = over, by = cpb - lnp + 1;                               // by: top row of the line under it
+        const double th = std::asin (cut / r) * 180 / kPi, hx = std::sqrt (r * r - cut * cut), cy = by + (lnp - 1) / 2.0 - cut;
+        aarc (pcx, cy, r, -90 - th, 90 + th);
+        const int hw = (int) std::floor (hx + 0.5); g->rect ((int) std::floor (pcx - (lnp - 1) / 2.0 + 0.5) - hw, by, 2 * hw + lnp, lnp);
+    }
+    if (set == 1 && k == 2)
+    {
+        // bars that stand on the row the letters stand on; the highest is a little higher than the letters
+        const int bw = (int) std::floor (2 * ZM + 0.5), gp = (iw - 3 * bw) / 2, top = capH + over;
+        const double hs[3] = { 0.57, 1.0, 0.79 };
+        for (int i = 0; i < 3; ++i) { const int hh = (int) std::floor (hs[i] * top + 0.5); g->rect (left + i * (bw + gp), cpb + 1 - hh, bw, hh); }
+    }
+    if (set == 2)
+    {
+        // two rings over each other (left and right), one ring (the mid), the outer halves of the two rings (the side),
+        // and those halves with a plus and a minus between them (delta: what the settings add and what they take away)
+        const int rr = (int) std::floor (2.6 * ZM + 0.5);
+        const double ca = left + rr + (lnp - 1) / 2.0, cb = left + iw - 1 - rr - (lnp - 1) / 2.0;
+        if (k == 0) { aarc (ca, pcy, rr, -180, 180); aarc (cb, pcy, rr, -180, 180); }
+        if (k == 1) aarc (ca, pcy, rr, -180, 180);
+        if (k >= 2)
+        {
+            // each half is a whole ring seen through a window: its two ends are then cut alike, at the top and at the bottom
+            int kx0, ky0, kx1, ky1; g->getClip (kx0, ky0, kx1, ky1);
+            g->clip (kx0, ky0, juce::jmin (kx1, (int) std::ceil (ca)), ky1); aarc (ca, pcy, rr, -180, 180);
+            g->clip (juce::jmax (kx0, (int) std::floor (cb) + 1), ky0, kx1, ky1); aarc (cb, pcy, rr, -180, 180);
+            g->clip (kx0, ky0, kx1, ky1);
+        }
+        if (k == 3)
+        {
+            // counted in whole pixels: the same room before the plus and after the minus
+            const int arm = ZM >= 1.5 ? 2 : 1, gp = (int) std::floor (0.9 * ZM + 0.5), pad = (int) std::floor (ZM + 1.0), P = 2 * arm + lnp, px0 = left + lnp + pad, iy = (int) std::floor (pcy - (lnp - 1) / 2.0 + 0.5);
+            g->rect (px0, iy, P, lnp); g->rect (px0 + arm, iy - arm, lnp, P); g->rect (px0 + P + gp, iy, P, lnp);
+        }
+    }
+    g->a = a;
+}
+
+int ToboImagerEditor::segs (double x, double y, double w, double h, int cols, int rows, const char* const* names, int sel, int invMask, const double* colW, const double* textDx, int iconSet)
 {
     const int lnp = (int) std::floor (LN * ZM + 0.5);
     box (x, y, w, h, CR, WHITE);
@@ -543,7 +623,21 @@ int ToboImagerEditor::segs (double x, double y, double w, double h, int cols, in
                 // the inside of the whole plate in the fill colour, but only within this cell: keeps the round outer corners
                 g->clip (x0, y0, x1, y1); setc (inv ? INK : ONC); rrect (x + LN, y + LN, w - 2 * LN, h - 2 * LN, CR - LN); g->unclip();
             }
-            g->font (f3); setc (on && inv ? WHITE : INK); tcap ((x0 + x1) / 2.0 + (textDx != nullptr ? std::floor (textDx[c] * ZM + 0.5) : 0.0), y0, y1, names[k]);      // in the middle of the cell as it is on the screen
+            g->font (f3); setc (on && inv ? WHITE : INK);
+            if (iconSet != 0)
+            {
+                // the sign and the name stand together in the middle of the cell: the sign (8 units), 3 units of room, the name
+                // (the width of the name to a part of a pixel, as tcap() places it)
+                // (The rows are those of flat capitals, the same for every button: a name with a round letter, like the S
+                // of SIDE, covers a row more, and its sign would stand a row higher than the sign of the button beside it.)
+                inkSpan (names[k]); inkSpan ("HIL"); const auto rw = inkRows["HIL"]; const double tw = inkWid[names[k]];
+                const int cph = rw.second - rw.first + 1, cpt = y0 + (int) std::floor (((y1 - y0) - cph) / 2.0);
+                const int iw = iconW (iconSet, k, cph), gp = (int) std::floor (3 * ZM + 0.5);
+                const int left = (int) std::floor ((x0 + x1) / 2.0 - (iw + gp + tw) / 2.0 + 0.5);
+                icon (iconSet, k, left, cpt, cph, (y0 + y1 - 1) / 2.0);
+                tcap (left + iw + gp + tw / 2.0, y0, y1, names[k]);
+            }
+            else tcap ((x0 + x1) / 2.0 + (textDx != nullptr ? std::floor (textDx[c] * ZM + 0.5) : 0.0), y0, y1, names[k]);      // in the middle of the cell as it is on the screen
             if (mpress && ! act && mxl >= x + cx (c) && mxl < x + cx (c + 1) && myl >= y + r * ch && myl < y + (r + 1) * ch) hit = k;
         }
     setc (INK);
@@ -1013,7 +1107,7 @@ void ToboImagerEditor::frame()
     {
         // the three choices as one plate; a click on MID or SIDE while it is chosen goes back to STEREO
         static const char* const mons[4] = { "STEREO", "MID", "SIDE", "DELTA" };
-        const int c = segs (98, 344, 170, 14, 4, 1, mons, gmon, 14);
+        const int c = segs (76, 344, 192, 14, 4, 1, mons, gmon, 14, nullptr, nullptr, 2);
         if (c >= 0) sset (17, c == gmon ? 0 : c);
     }
 
@@ -1047,7 +1141,7 @@ void ToboImagerEditor::frame()
     {
         static const char* const kinds[3] = { "GONIO", "POLAR", "LEVEL" };
         const int mode = juce::jlimit (0, 2, proc.getOpt ("scopeMode", 0));
-        const int c = segs (316, 16, 132, 14, 3, 1, kinds, mode, 0);
+        const int c = segs (312, 16, 140, 14, 3, 1, kinds, mode, 0, nullptr, nullptr, 1);
         if (c >= 0 && c != mode) { proc.setOpt ("scopeMode", c); lastzm = 0; }
     }
     double gpk = 0.0001, gcorr = 1;

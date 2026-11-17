@@ -191,7 +191,13 @@ It is built with the JUCE framework (AGPLv3) and the VST 3 SDK (MIT License). VS
 
 ## Version history
 
-### 0.1.1 ({DATE})
+### 0.1.2 ({DATE})
+
+- Added a small icon to the left of the name on the meter buttons (GONIO, POLAR, LEVEL) and on the MONITOR buttons (STEREO, MID, SIDE, DELTA), so you can tell them apart without reading the names.
+- Made the line that shows the STEREOIZE amount in the spectrum display darker.
+- Made the meter and MONITOR buttons slightly wider.
+
+### 0.1.1 (2026-11-17)
 
 - Fixed the power symbol on the band headers. At the 2x size, its vertical bar sat half a pixel to the left of the centre of the ring. At the 1.25x, 1.5x and 2x sizes, the bottom of the ring was fainter than the rest.
 

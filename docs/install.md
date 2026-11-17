@@ -4,7 +4,7 @@
 
 ## Install
 
-1. Download `ToboImager_0.1.1_win64.zip` from the [latest release](https://github.com/tobokegao/ToboImager/releases/latest) and unzip it.
+1. Download `ToboImager_0.1.2_win64.zip` from the [latest release](https://github.com/tobokegao/ToboImager/releases/latest) and unzip it.
 2. Copy the folder `Tobo Imager.vst3` (the whole folder, not only the file inside it) to `C:\Program Files\Common Files\VST3\`.
 3. Start your DAW and let it scan for new plugins. In REAPER: `Options` > `Preferences` > `Plug-ins` > `VST` > `Re-scan`.
 4. The plugin is listed as **Tobo Imager** (by Tobokegao).

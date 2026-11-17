@@ -31,7 +31,8 @@ public:
     void touch();
     void wash (int hex, double alpha);
     void clip (int x0, int y0, int x1, int y1) { kx0 = x0; ky0 = y0; kx1 = x1; ky1 = y1; }   // drawing only inside these pixels
-    void unclip() { kx0 = ky0 = 0; kx1 = w; ky1 = h; }                          // the whole picture mixed towards one colour                                               // tell JUCE that the pixels have changed
+    void unclip() { kx0 = ky0 = 0; kx1 = w; ky1 = h; }
+    void getClip (int& x0, int& y0, int& x1, int& y1) const { x0 = kx0; y0 = ky0; x1 = kx1; y1 = ky1; }                          // the whole picture mixed towards one colour                                               // tell JUCE that the pixels have changed
 
 private:
     juce::Image img;
@@ -94,9 +95,12 @@ private:
     void tcap (double cxPix, int y0, int y1, const juce::String& s); void capRows(); int capTop = 0, capBot = 8;
     std::pair<int, int> inkSpan (const juce::String& s);              // first and last column of pixels the name covers
     std::map<juce::String, std::pair<int, int>> inkSpans;             // (worked out once for each name and size)
+    std::map<juce::String, double> inkWid;                             // how wide the name is, to a part of a pixel
     std::map<juce::String, double> inkMid;                             // the middle of the name left to right, from the x given to Canvas::text
     std::map<juce::String, std::pair<int, int>> inkRows;              // first and last row, from the y given to Canvas::text
-    int segs (double x, double y, double w, double h, int cols, int rows, const char* const* names, int sel, int invMask, const double* colW = nullptr, const double* textDx = nullptr);
+    int segs (double x, double y, double w, double h, int cols, int rows, const char* const* names, int sel, int invMask, const double* colW = nullptr, const double* textDx = nullptr, int iconSet = 0);
+    void icon (int set, int k, int left, int cpt, int capH, double cellMid);
+    int iconW (int set, int k, int capH) const;
     static double fx (double f) { return 33 + std::log (f / 20) / std::log (1000.0) * 266; }
     static int mixc (int h1, int h2, double t);
 

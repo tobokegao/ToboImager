@@ -131,21 +131,21 @@ int main (int argc, char** argv)
     std::cout << "SCATTER knob (type FVN) dragged 30 px up: " << v0 << " -> " << getp (p, pScatter) << "\n"; bad += ! (getp (p, pScatter) > v0);
     v0 = getp (p, pGuard); juce::Thread::sleep (450); at (422, 328, true); at (422, 308, true); at (422, 308, false);
     std::cout << "GUARD knob dragged 30 px up: " << v0 << " -> " << getp (p, pGuard) << "\n"; bad += ! (getp (p, pGuard) > v0);
-    // meter kinds (three parts of 44 from x 316, y 16..30)
+    // meter kinds (three parts from x 312 to 452, y 16..30)
     for (int k : { 1, 2, 0, 2, 2 })
     {
-        click (316 + 44 * (k + 0.5), 23); const int got = p.getOpt ("scopeMode", 0);
+        click (312 + 140.0 / 3 * (k + 0.5), 23); const int got = p.getOpt ("scopeMode", 0);
         std::cout << "METER part " << k << " click: kind = " << got << (got == k ? "" : "   WRONG") << "\n"; bad += got != k;
     }
-    // monitor (three parts of 46 from x 130, y 344..358); a second click on MID or SIDE goes back to STEREO
+    // monitor (four parts of 48 from x 76, y 344..358); a second click on MID or SIDE goes back to STEREO
     static const int mk[6] = { 1, 2, 2, 1, 0, 0 }, mw[6] = { 1, 2, 0, 1, 0, 0 };
     for (int n = 0; n < 6; ++n)
     {
-        click (98 + 42.5 * (mk[n] + 0.5), 351); const int got = (int) getp (p, pMonitor);
+        click (76 + 48 * (mk[n] + 0.5), 351); const int got = (int) getp (p, pMonitor);
         std::cout << "MONITOR part " << mk[n] << " click: monitor = " << got << " (want " << mw[n] << ")" << (got == mw[n] ? "" : "   WRONG") << "\n"; bad += got != mw[n];
     }
-    click (98 + 42.5 * 3.5, 351); { const int got = (int) getp (p, pMonitor); std::cout << "MONITOR DELTA click: monitor = " << got << " (want 3)\n"; bad += got != 3; }
-    click (98 + 42.5 * 3.5, 351); { const int got = (int) getp (p, pMonitor); std::cout << "MONITOR DELTA click again: monitor = " << got << " (want 0)\n"; bad += got != 0; }
+    click (76 + 48 * 3.5, 351); { const int got = (int) getp (p, pMonitor); std::cout << "MONITOR DELTA click: monitor = " << got << " (want 3)\n"; bad += got != 3; }
+    click (76 + 48 * 3.5, 351); { const int got = (int) getp (p, pMonitor); std::cout << "MONITOR DELTA click again: monitor = " << got << " (want 0)\n"; bad += got != 0; }
     std::cout << (bad ? "JOINED PLATES: " + std::to_string (bad) + " WRONG" : std::string ("joined plates: all right")) << "\n";
     return 0;
 }
